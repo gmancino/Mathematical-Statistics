@@ -1,0 +1,102 @@
+---
+title: "R HW 1"
+author: "Gabe Mancino"
+date: "8/24/2017"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In class, we considered the case of rolling two dice, one red and one white.  Let $Y\equiv$ the minimum of the two rolls. 
+
+#### 1. 
+Define the probability mass function (pmf) in tabular format.  The table is started for you, below.  Fill in the appropriate entries for $p(y)$.
+
+Probability mass function for $Y:=$ minimum of rolling one white and one red dice:
+
+```{r}
+y <- c(1:6)
+py <- c(11/36, 9/36, 7/36, 5/36, 3/36,1/36)
+dd <- data.frame(y = y, probs = py)
+```
+$y$  |  $p(y)$
+---  |  ---
+1    |  11/36
+2    |  9/36
+3    |  7/36
+4    |  5/36
+5    |  3/36
+6    |  1/36
+
+#### 2.
+Graph this pmf.
+
+```{r}
+library(ggplot2)
+dd <- data.frame(y = y, probs = py)
+ggplot(aes(x = y, y = probs), data = dd) + geom_bar(stat = 'identity') + ylab('P(Y=y)') + ggtitle('pmf of Y')
+```
+
+#### 3.
+Find $\mu \equiv E(Y)$.
+
+$E(Y)=$
+```{r}
+ey <- sum(y * py)
+ey
+```
+
+#### 4.
+Find $\sigma^2 \equiv Var(Y)$.
+
+$Var(Y)=$
+```{r}
+vy <- sum(y**2 * py) - ey**2
+vy
+```
+
+#### 5.
+Find $M_Y(t)$, and create a plot of $M_Y(t)$ as a function of $t$ over the interval $[-1,1]$.  (Hint: first, write a function `m(t)` that takes as argument `t` and returns $M_Y(t)$, for any input $t$.  Then, create a sequence of $t-$values over $[1,1]$ with the `seq()` function, and use your function to evaluate $M_Y(t)$ for each value in the sequence.  Then plot this sequence with $t$ on the x-axis and $M_Y(t)$ on the y-axis.  The function `exp(t)` can be used to evaluate $e^t$.)
+
+```{r}
+m.t <- function(t) {
+  y <- c(1:6)
+  py <- c(11/36, 9/36, 7/36, 5/36, 3/36, 1/36)
+  e.t <- exp(y * t)
+  f.p <- e.t * py
+  f.t <- sum(f.p)
+  return(f.t)
+}
+a.t <- seq(-1,1, by = 0.01)
+out <- sapply(a.t, m.t)
+df <- data.frame(a.t, out)
+ggplot(aes(x = a.t, y = out), data = df) + geom_line(stat = 'identity') + ylab(expression(paste(M[y] (t)))) + xlab('Time') + ggtitle('mgf of Y')
+```
+
+#### 6.
+Now write an `R` function `one.Y()` that simulates a single realization of $Y$.  Using this function and `replicate()`, generate 1000 realizations of $Y$.  Graph the empirical pmf, and verify that is is similar to the theoretical one above.
+
+```{r}
+one.Y <- function() {
+  possible.rolls <- c(1:6)
+  two.rolls <- sample(possible.rolls, 2, replace = TRUE)
+  total <- min(two.rolls)
+  return(total)
+}
+many.Y <- replicate(1000, one.Y())
+df <- data.frame(x = as.factor(many.Y))
+ggplot(aes(x = as.factor(many.Y)), data = df) + geom_bar(aes(y = (..count..)/(sum(..count..)))) + ylab('Observed Proportion') + xlab('y') + ggtitle('Empirical pmf of Y')
+```
+
+#### 7.
+Find the empirical mean $\bar Y$ and variance $S^2$ (use `mean()` and `var()`).  How do they compare to $\mu$ and $\sigma^2$?
+
+```{r}
+mean(many.Y)
+var(many.Y)
+```
+Clearly, the observed mean and the observed variance are "close" to $\mu$ and $\sigma^2$. 
