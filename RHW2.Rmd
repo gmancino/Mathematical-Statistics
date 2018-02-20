@@ -1,249 +1,137 @@
 ---
 title: "R Homework 2"
 author: "Gabe Mancino"
-date: "9/8/2017"
-output: html_document
+date: "2/9/2018"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-**Due Wednesday, 9/20 by 11:59pm.  Prepare your submission with R Markdown.  Submit fully-knitted html, Word, or pdf to D2L by due date.  You are encouraged to use this .Rmd file as your starting point for your submission.**
 
-(Modified from *Introduction to Scientific Programming and Simulation Using R* by Owen Jones et al).  
+Let $\theta$ denote the median of the $EXP(\beta)$ distribution; i.e. $\theta$ is the quantity that satisfies:
 
- A roulette wheel has 37 slots.  18 of these are colored red, 18 are black, and 1 slot (numbered 0) is colored green.  The red and black slots are numbered from 1 to 36.  There are four possible "games" or "systems" you can use when playing roulette.  Different games offer different playing experiences.  Some allow you to win more often than you lose, some let you play longer, some cost more to play, and some risk greater losses for a greater reward.  The games we will consider here are as follows.
+$$0.5 = \int_0^\theta \frac{1}{\beta}e^{-y/\beta} dy$$
 
-A. ***Betting on red***
+Consider the problem of estimating $\theta$ from a sample $Y_1, Y_2,...,Y_n$ drawn i.i.d. from this $EXP(\beta)$ distribution.
 
-This game involves a single bet.  You always bet on red, and you always bet \$1.  If the ball lands on red you win \$1, otherwise you lose.
+1.  Derive $\theta$ as a function of $\beta$.  Show your work.
 
-B. ***Betting on a number***
+\textbf{Solution.}
+We begin by noting that the CDF of a $Y\sim EXP(\beta)$ is defined to be
+\[
+F(y)=
+\begin{cases}
+0 &y<0\\
+1-e^{-y/\beta} &0\le y
+\end{cases}.
+\]
+Thus,
+\[
+\int_0^\theta \frac{1}{\beta}e^{-y/\beta} dy=1-e^{-\theta/\beta}\stackrel{set}{=}0.5,
+\]
+so solving for $\theta$ yields
 
-This game also involves a single bet.  You bet \$1 on a single number, say 17.  If the ball lands on that number you win \$35, otherwise you lose.
+\[
+\begin{aligned}
+0.5 &=1-e^{-\theta/\beta}\\
+e^{-\theta/\beta} &=0.5\\
+-\theta/\beta &=\ln(0.5)\\
+\theta &=-\beta\ln(0.5).
+\end{aligned}
+\]
 
+$\hfill\square$
 
+2.  Let $\hat\theta_1 = \bar Y$, the sample mean.  Is $\hat\theta_1$ an unbiased estimator of $\theta$?  Fully justify your response.
 
-C. ***Martingale system***
+\textbf{Solution.}
+We begin by solving for $E(\hat{\theta_1})\equiv E(\bar{Y}),$
+\[
+E(\bar{Y})=E\Big(\frac{\sum\limits_{i=1}^{n}{Y_i}}{n}\Big)=\frac{1}{n}E(\sum\limits_{i=1}^{n}{Y_i})\stackrel{i.i.d.}{=}\frac{n\beta}{n}=\beta.
+\]
+Computing $B(\hat{\theta}_1)=E(\hat{\theta}_1)-\theta=\beta-\theta\ne0$ implies that $\hat{\theta}_1$ is biased.
 
-In this game you start by betting \$1 on red.  If you lose, you double your previous bet; if you win, your next bet is \$1.  Regardless, you continue to bet on red.  The game continues until your net winnings equal \$10, or the bet exceeds \$100 (you only have a finite amount of wealth!).  
+$\hfill\square$
 
+3.  Define $\hat\theta_2 = h(\bar Y)$ to be an unbiased estimator of $\theta$ that is a function of $\bar Y$.  Find $\hat{\theta}_2$.
 
-D. ***Labouchere System***
+\textbf{Solution.}
+Using what we derived in Question 1 we can note that $-\beta\ln(0.5)=\theta,$ thus $\hat{\theta}_2=-\bar{Y}\ln(0.5)$ is unbiased.
 
-In this game you start with the list of numbers (1,2,3,4).  To begin, you bet the sum of the first and last numbers on red (initially, \$5).  If you win you delete the first and last numbers from the list (so if you win the list becomes (2,3)), otherwise you add the loss to the end of the list (so if you lose your first bet the list becomes (1,2,3,4,5)).  Repeat until your list is empty, or the bet exceeds \$100.  If only one number is left on the list, you bet that number.
+To prove this: $E(\hat{\theta}_2)=-\ln(0.5)E(\bar{Y})=-\ln(0.5)\beta=\theta$ so $B(\hat{\theta}_2)=\theta-\theta=0.$
 
-E. ***Fibonacci System***
+$\hfill\square$
 
-This system is intended to use Nature to win Money.  The Fibonacci Sequence are the numbers:
+3.  Let $\hat\theta_3$ be the median of the sample of size $n$.  Finding the bias of $\hat\theta_3$ analytically is hard!  Prove this to yourself by writing down the integral that you would need to evaluate to find $E(\hat\theta_3)$.  (You may assume $n$ is odd in your derivation.)
 
-0, 1, 1, 2, 3, 5, 8, 13, 21, 34...
+\textbf{Solution.}
+To derive $\hat{\theta_3}$ we will assume $n$ is odd thus we will be using page 22 from our Chapter 6 notes. The median order statistic is given by $Y_{(\frac{n+1}{2})}$ which can found by substituting $\frac{n+1}{2}$ in for $j$ thus
+\[
+f_{Y_{(\frac{n+1}{2})}}(y)=\frac{n!}{(\frac{n+1}{2}-1)!(n-\frac{n+1}{2})!}\Big(\frac{1}{\beta}e^{-y/\beta}\Big)\Big(1-e^{-y/\beta}\Big)^{\frac{n+1}{2}-1}\Big(e^{-y/\beta}\Big)^{n-(\frac{n+1}{2})};\hspace{2cm} y>0.
+\]
+Thus to solve for $E(\hat{\theta_3})$ we will be computing the integral:
+\[
+E(\hat{\theta}_3)=\int_0^{\infty}y\cdot\frac{n!}{(\frac{n+1}{2}-1)!(n-\frac{n+1}{2})!}\Big(\frac{1}{\beta}e^{-y/\beta}\Big)\Big(1-e^{-y/\beta}\Big)^{\frac{n+1}{2}-1}\Big(e^{-y/\beta}\Big)^{n-(\frac{n+1}{2})}dy
+\]
+which does indeed look nasty.
 
-In this sequence, each number is the sum of the preceding two numbers.
+$\hfill\square$
 
-To use the Fibonacci System, you always bet on red.  Your first bet is the first non-zero number in the sequence, \$ %>% 1.  If you lose, you bet the next number in the sequence, and continue moving along the sequence as long as you continue losing.  If you win, you revert to the previous number in the sequence for your next bet.
+4. Use simulation studies to compare the three estimators when $\beta = 5$.  Use 100,000 replications. Fill in the table below with the outcomes of your simulation study:
 
-An example, with the bet number; bet amount; and bet outcome: 
-
-* Bet 1:  \$1; loss.
-* Bet 2: \$1; loss.
-* Bet 3: \$2; loss.
-* Bet 4: \$3; loss.
-* Bet 5: \$5; win.
-* Bet 6: \$3; loss.  
-...etc.
-
-
-
-You continue to play until your next bet is \$0; or your next bet would exceed \$100.
-
-Thus the following game would be complete:
-
-
-* Bet 1: \$1; loss.
-* Bet 2: \$1; win (move back to the "first" 1)
-* Bet 3: \$1; win
-
-Game over, since your next bet would be \$0.
-
-
-
-Games C-E are intended to cover previous losses by increasing bet size.
-
-The purpose of this problem is to compare the following qualities of the four games:
-
-1.  Expected winnings per game;
-2. Proportion of games you win (i.e., make money);
-3.  Expected playing time per game, measured by the number of bets made; 
-4. The maximum amount you can win;
-5. The maximum amount you can lose.
-
-## Part 1: Theoretical
-
-1. For the first four games, find the theoretical values of the maximum amount you could win in a single play of the game. (This amount is very difficult to determine for Game E).  Enter these in the table below.
-
-Game  | Max Win
------ | --------
-A     | 1
-B     | 35
-C     | 10
-D     | 10
-
-2. For all games, find the theoretical values of the maximum amount you could lose in a single play of the game.  Enter these in the table below.
-
-Game  | Max Loss
------ | --------
-A     | 1
-B     | 1
-C     | 127
-D     | 5041
-E     | 232
-
-## Part 2: Simulation
-
-For each game write a function (with no arguments) that plays the game once and returns a vector of length 2 consisting of the amount won/lost and how many bets were made.  Using these functions and the `replicate()` function, simulate 100,000 "playings" of each game.  For Games C-E, you may want to consider the use of a `while()` loop.  Fill in the table below with your simulated results, verifying that columns 4 and 5 are similar to the theoretical (if they are not, something is wrong with your functions!)
-
-```{r}
-gameA <- function() {
-  bet <- 1
-  p <- 18/37
-  nplays <- 0
-  w.l <- sample(c('win', 'loss'), 1, prob = c(p, 1 - p)) #spinning the wheel
-  if (w.l=='loss') {
-    winnings <- -bet
-  } else if (w.l=='win'){
-    winnings <- bet
-  }
-  nplays <- nplays + 1
-  return(c(winnings, nplays))
+\textbf{Solution.}
+Consider the following code:
+```{r, tidy = TRUE, tidy.opts=list(width.cutoff=60)}
+theta.hats <- function(n){
+  y <- rexp(n, rate = 1/5)
+  ybar <- mean(y)
+  theta.hat1 <- ybar
+  theta.hat2 <- ybar * -log(0.5)
+  theta.hat3 <- median(y)
+  output <- c('ThetaHat1' = theta.hat1, 'ThetaHat2' = theta.hat2, 'ThetaHat3' = theta.hat3)
+  return(output)
 }
-many.gameA <- replicate(100000, gameA())
-winsA <- sum(many.gameA[1,] > 0)
-```
-
-```{r}
-gameB <- function(){
-  bet <- 1
-  p <- 1/37
-  nplays <- 0
-  w.l <- sample(c('win', 'loss'), 1, prob = c(p, 1 - p))
-  if (w.l=='loss') {
-    winnings <- -bet
-  } else if (w.l=='win'){
-    winnings <- bet + 34
-  }
-  nplays <- nplays + 1
-  return(c(winnings, nplays))
+mse <- function(estimators){
+  mse <- mean((estimators - (-log(0.5)*5))^2)
+  return(mse)
 }
-many.gameB <- replicate(100000, gameB())
-winsB <- sum(many.gameB[2,] > 0)
+#The true theta
+theta <- qexp(0.5, rate = 1/5)
+# n = 3
+many.thetahats.n3 <- replicate(100000, theta.hats(n = 3))
+mean.thetahats.n3 <- round(data.frame(apply(many.thetahats.n3, 1, mean) - theta), digits = 2)
+var.thetahats.n3 <- round(data.frame(apply(many.thetahats.n3, 1, var)), digits = 2)
+mse.thetahats.n3 <- round(data.frame(apply(many.thetahats.n3, 1, mse)), digits = 2)
+# n = 11
+many.thetahats.n11 <- replicate(100000, theta.hats(n = 11))
+mean.thetahats.n11 <- round(data.frame(apply(many.thetahats.n11, 1, mean) - theta), digits = 2)
+var.thetahats.n11 <- round(data.frame(apply(many.thetahats.n11, 1, var)), digits = 2)
+mse.thetahats.n11 <- round(data.frame(apply(many.thetahats.n11, 1, mse)), digits = 2)
+# n = 51
+many.thetahats.n51 <- replicate(100000, theta.hats(n = 51))
+mean.thetahats.n51 <- round(data.frame(apply(many.thetahats.n51, 1, mean) - theta), digits = 2)
+var.thetahats.n51 <- round(data.frame(apply(many.thetahats.n51, 1, var)), digits = 2)
+mse.thetahats.n51 <- round(data.frame(apply(many.thetahats.n51, 1, mse)), digits = 2)
 ```
 
-```{r}
-gameC <- function() {
-  p <- 18/37
-  bet <- 1
-  money <- 0
-  nplays <- 0
-  while (money < 10 & bet <= 100) {
-    w.l <- sample(c('win', 'loss'), 1, prob = c(p, 1 - p))
-    if (w.l=='loss'){
-      money <- money - bet
-      bet <- 2 * bet #updating bet to correct amount
-    } else if (w.l=='win') {
-      money <- money + bet
-      bet <- 1 #updating bet to correct amount
-    }
-    nplays <- nplays + 1
-  }
-  return(c(money, nplays))
-}
-many.gameC <- replicate(100000, gameC())
-winsC <- sum(many.gameC[1,] > 0)
-```
+ |                  |        $n=3$      |         $n=11$      |          $n=51$    | 
+ | ----------------- | ----------------- | ------------------  | ------------------- |
+ | $B(\hat{\theta}_1)$ | `r mean.thetahats.n3[1,]` |  `r mean.thetahats.n11[1,]` |`r mean.thetahats.n51[1,]` |
+ | $B(\hat{\theta}_2)$ | `r mean.thetahats.n3[2,]` |  `r mean.thetahats.n11[2,]` | `r mean.thetahats.n51[2,]` |
+ | $B(\hat{\theta}_3)$ | `r mean.thetahats.n3[3,]` | `r mean.thetahats.n11[3,]` | `r mean.thetahats.n51[3,]` |
+ | ----------------- | ----------------- | ------------------  | ------------------- |
+ | $Var(\hat{\theta}_1)$ | `r var.thetahats.n3[1,]` | `r var.thetahats.n11[1,]` | `r var.thetahats.n51[1,]` |
+ | $Var(\hat{\theta}_2)$ | `r var.thetahats.n3[2,]` | `r var.thetahats.n11[2,]` | `r var.thetahats.n51[2,]` |
+ | $Var(\hat{\theta}_3)$ | `r var.thetahats.n3[3,]` | `r var.thetahats.n11[3,]` | `r var.thetahats.n51[3,]` |
+ ----------------- | ----------------- | ------------------  | -------------------
+ | $MSE(\hat{\theta}_1)$ | `r mse.thetahats.n3[1,]` | `r mse.thetahats.n11[1,]` | `r mse.thetahats.n51[1,]` |
+ | $MSE(\hat{\theta}_2)$ | `r mse.thetahats.n3[2,]` | `r mse.thetahats.n11[2,]` | `r mse.thetahats.n51[2,]` |
+ | $MSE(\hat{\theta}_3)$ | `r mse.thetahats.n3[3,]` | `r mse.thetahats.n11[3,]` | `r mse.thetahats.n51[3,]` |    
 
-```{r}
-gameD <- function(){
- p <- 18/37 
- list <- c(1:4)
- l.l <- length(list)
- money <- 0
- nplays <- 0
- bet <- 0
- while (bet <= 100 & l.l != 0){
-   if (l.l==1){
-     bet <- l.l[1]
-   } else if (l.l > 1){
-     bet <- list[1] + list[l.l]
-   }
-   w.l <- sample(c('win', 'loss'), 1, prob = c(p, 1 - p))
-   if (w.l=='loss'){
-     money <- money - bet
-     list <- c(list, bet)
-   } else if (w.l=='win'){
-     money <- money + bet
-     list <- list[-c(1, l.l)]
-   }
-   l.l <- length(list)
-   nplays <- nplays + 1
- }
- return(c(money, nplays))
-}
-many.gameD <- replicate(100000, gameD())
-winsD <- sum(many.gameD[1,] > 0)
-```
 
-```{r}
-gameE <- function(){
-  p <- 18/37
-  bet <- 1
-  fib <- c(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233)
-  index <- 2
-  money <- 0
-  nplays <- 0
-  while (bet > 0 & bet <= 100) {
-    w.l <- sample(c('win', 'loss'), 1, prob = c(p, 1 - p))
-    if (w.l=='loss'){
-      index <- index + 1
-      money <- money - bet
-    } else if (w.l=='win'){
-      index <- index - 1
-      money <- money + bet
-    }
-    nplays <- nplays + 1
-    bet <- fib[index] #updates bet to correct position in fibonacci sequence
-  }
-  return(c(money, nplays))
-}
-many.gameE <- replicate(100000, gameE())
-winsE <- sum(many.gameE[1,] > 0)
-```
+5. Which estimator is best?  Justify your answer.
 
-Game  |  (1) Expected winnings | (2) Proportion of games won | (3) Expected playing time | (4) Max win | (5) Max loss
----  | ------------ | ------------ | ------------ | ------------| ------------
-A    |  `r mean(many.gameA[1,])`   |  `r winsA/100000`   |  1   | `r max(many.gameA)`   | `r min(many.gameA)`
-B    |   `r mean(many.gameB[1,])`  |  `r winsB/100000`   |  1   | `r max(many.gameB)`   | `r min(many.gameB)`
-C    |  `r mean(many.gameC[1,])`   |  `r winsC/100000`   |  `r mean(many.gameC[2,])`   |  `r max(many.gameC[1,])`  | `r min(many.gameC[1,])`
-D    |  `r mean(many.gameD[1,])`   |  `r winsD/100000`   |  `r mean(many.gameD[2,])`   |  `r max(many.gameD[1,])`  | `r min(many.gameD[1,])`
-E    | `r mean(many.gameE[1,])`    |  `r winsE/100000`    |   `r mean(many.gameE[2,])`  | `r max(many.gameE[1,])`   | `r min(many.gameE[1,])`
+\textbf{Solution.}
+Using the above table, we can see that as $n$ increases $\hat{\theta}_2$ is unbiased, has the smallest variance and the lowest $MSE.$ Thus I would say that $\hat{\theta}_2$ is the best estimator.
 
-Additionally, using `sd()` and the results of your 100,000 "playings" of each game, answer the following questions:
-
-* For which game is the amount won most variable?
-* For which game is the expected playing time most variable?  
-
-To get you started, here is the shell of a function for Game C.  Similarly for Games D-E, you will need to set initial values of bet, money, and nplays.  Set the `while()` loop condition--and update the values of `bet`, `money`, and `nplays`-- according to the rules of each game.  
-
-```{r}
-money.o <- c(sd(many.gameA[1,]), sd(many.gameB[1,]), sd(many.gameC[1,]), sd(many.gameD[1,]), sd(many.gameE[1,]))
-names(money.o) <- c('A', 'B', 'C', 'D', 'E')
-morder <- sort(money.o)
-```
-The game with the most variable amount of money won is `r names(morder)[5]`
-
-```{r}
-nplays.o <- c(sd(many.gameA[2,]), sd(many.gameB[2,]), sd(many.gameC[2,]), sd(many.gameD[2,]), sd(many.gameE[2,]))
-names(nplays.o) <- c('A', 'B', 'C', 'D', 'E')
-nporder <- sort(nplays.o)
-```
-The game with the most variable amount of playing time is `r names(nporder)[5]`
+$\hfill\square$

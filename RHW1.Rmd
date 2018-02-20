@@ -1,102 +1,90 @@
 ---
-title: "R HW 1"
+title: "R Homework 1"
 author: "Gabe Mancino"
-date: "8/24/2017"
-output:
-  html_document: default
-  word_document: default
+date: "1/20/2018"
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-In class, we considered the case of rolling two dice, one red and one white.  Let $Y\equiv$ the minimum of the two rolls. 
+Let $Y$ represent the actual amount of coca-cola in 12-ounce bottles coming off a production line, with $Y \sim N(12, \sigma^2_Y = 0.01)$.  A manufacturing company claims to make filling machines that are more precise.  Specifically, with $X$ representing the actual amount of coke in 12-ounce bottles filled by the new machine, the company claims that $X\sim N(12, \sigma^2_X = 0.005)$.
 
-#### 1. 
-Define the probability mass function (pmf) in tabular format.  The table is started for you, below.  Fill in the appropriate entries for $p(y)$.
+The manager at the coke factory decides to test this claim with a sample $Y_1,...,Y_{20}$ taken i.i.d. from the existing machines, but a larger sample $X_1,...,X_{50}$ from the new machine.  
 
-Probability mass function for $Y:=$ minimum of rolling one white and one red dice:
 
-```{r}
-y <- c(1:6)
-py <- c(11/36, 9/36, 7/36, 5/36, 3/36,1/36)
-dd <- data.frame(y = y, probs = py)
-```
-$y$  |  $p(y)$
----  |  ---
-1    |  11/36
-2    |  9/36
-3    |  7/36
-4    |  5/36
-5    |  3/36
-6    |  1/36
+1. Simulate 1000 realizations of an appropriately scaled function of the sample variances, $s^2_X$ and $s^2_Y$, that follows an $F$ distribution.  Plot a histogram of these realizations, and superimpose the appropriate theoretical $F$ distribution. Verify that the theoretical distribution well-approximates the simulated realizations.
 
-#### 2.
-Graph this pmf.
+**Solution.**
 
-```{r}
+Consider the following $R$ code.
+```{r, tidy = TRUE, tidy.opts=list(width.cutoff=60)}
 library(ggplot2)
-dd <- data.frame(y = y, probs = py)
-ggplot(aes(x = y, y = probs), data = dd) + geom_bar(stat = 'identity') + ylab('P(Y=y)') + ggtitle('pmf of Y')
-```
-
-#### 3.
-Find $\mu \equiv E(Y)$.
-
-$E(Y)=$
-```{r}
-ey <- sum(y * py)
-ey
-```
-
-#### 4.
-Find $\sigma^2 \equiv Var(Y)$.
-
-$Var(Y)=$
-```{r}
-vy <- sum(y**2 * py) - ey**2
-vy
-```
-
-#### 5.
-Find $M_Y(t)$, and create a plot of $M_Y(t)$ as a function of $t$ over the interval $[-1,1]$.  (Hint: first, write a function `m(t)` that takes as argument `t` and returns $M_Y(t)$, for any input $t$.  Then, create a sequence of $t-$values over $[1,1]$ with the `seq()` function, and use your function to evaluate $M_Y(t)$ for each value in the sequence.  Then plot this sequence with $t$ on the x-axis and $M_Y(t)$ on the y-axis.  The function `exp(t)` can be used to evaluate $e^t$.)
-
-```{r}
-m.t <- function(t) {
-  y <- c(1:6)
-  py <- c(11/36, 9/36, 7/36, 5/36, 3/36, 1/36)
-  e.t <- exp(y * t)
-  f.p <- e.t * py
-  f.t <- sum(f.p)
-  return(f.t)
+one.samp <- function(){
+  samp.x <- rnorm(20, mean = 12, sd = sqrt(0.005))
+  samp.y <- rnorm(50, mean = 12, sd = sqrt(0.01))
+  s2.x <- var(samp.x)/0.005
+  s2.y <- var(samp.y)/0.01
+  output <- s2.x/s2.y
+  return(output)
 }
-a.t <- seq(-1,1, by = 0.01)
-out <- sapply(a.t, m.t)
-df <- data.frame(a.t, out)
-ggplot(aes(x = a.t, y = out), data = df) + geom_line(stat = 'identity') + ylab(expression(paste(M[y] (t)))) + xlab('Time') + ggtitle('mgf of Y')
+many.samp <- replicate(1000, one.samp())
+data.f <- data.frame(many.samp)
+ggplot(aes(x = data.f), data = data.f) + geom_histogram(aes(y = ..density..), bins = 75, col = 'black') + xlim(0, 5) + xlab('X') + ylab('Density') + ggtitle('Simulated and Theoretical F-Distribution') + stat_function(fun = df, geom = 'line', col = 'red', args = list(df1 = 49, df2 = 19))
+
 ```
+Thus we can see that the simulated F-distribution well approximates the theoretical F-distribution.
 
-#### 6.
-Now write an `R` function `one.Y()` that simulates a single realization of $Y$.  Using this function and `replicate()`, generate 1000 realizations of $Y$.  Graph the empirical pmf, and verify that is is similar to the theoretical one above.
+$\hfill\square$
 
-```{r}
-one.Y <- function() {
-  possible.rolls <- c(1:6)
-  two.rolls <- sample(possible.rolls, 2, replace = TRUE)
-  total <- min(two.rolls)
-  return(total)
+
+2.  Specify the form of a 95% confidence interval for $\sigma^2_Y/\sigma^2_X$.  
+
+**Solution.**
+
+To derive the 95% confidence interval for $\frac{\sigma^2_Y}{\sigma^2_X},$ we can note that our above graph is for $F\sim\frac{s^2_X/\sigma^2_X}{s^2_Y/\sigma^2_Y}$, thus a 95% confidence interval is of the form, $P(Q_{0.025}\le F\le Q_{0.975}).$ Then some algebra yields,
+\[
+P(Q_{0.025}\le\frac{s^2_X/\sigma^2_X}{s^2_Y/\sigma^2_Y}\le Q_{0.975}) = P(\frac{s^2_Y}{s^2_X}Q_{0.025}\le\frac{\sigma^2_Y}{\sigma^2_X}\le\frac{s^2_Y}{s^2_X}Q_{0.975}).
+\]
+
+$\hfill\square$
+
+\newpage
+3.  Using the confidence interval you just derived, simulate 1000 realizations of these confidence intervals, assuming the manufacturing company's claims are correct.  Verify that the confidence intervals have approximately correct coverage of the true value of $\sigma^2_Y/\sigma^2_X$.  
+
+**Solution.**
+
+Consider the following $R$ code.
+```{r, tidy = TRUE, tidy.opts=list(width.cutoff=60)}
+#Generate one confidence interval with the following code:
+get.one.ci <- function(){
+  one.samp.y <- rnorm(20, mean = 12, sd = sqrt(0.01))
+  one.samp.x <- rnorm(50, mean = 12, sd = sqrt(0.005))
+  var.y <- var(one.samp.y)
+  var.x <- var(one.samp.x)
+  rat <- var.y / var.x
+  lower <- rat * qf(0.025, df1 = 49, df2 = 19)
+  upper <- rat * qf(0.975, df1 = 49, df2 = 19)
+  ci <- c(lower, upper)
+  return(ci)
 }
-many.Y <- replicate(1000, one.Y())
-df <- data.frame(x = as.factor(many.Y))
-ggplot(aes(x = as.factor(many.Y)), data = df) + geom_bar(aes(y = (..count..)/(sum(..count..)))) + ylab('Observed Proportion') + xlab('y') + ggtitle('Empirical pmf of Y')
+#Create a function that tells us in our confidence interval over laps the true ratio of variances
+covers <- function(ci){
+  covers <- ifelse(ci[1] < 2 & 2 < ci[2], 'Yes', 'No')
+  return(covers)
+}
+#Generate 1000 random confidence intervals
+many.ci <- replicate(1000, get.one.ci())
+data.ci <- data.frame(t(many.ci))
+#Apply our cover function to each interval
+data.ci$Coverage <- apply(data.ci, 1, covers)
+data.ci$Sample <- 1:nrow(data.ci)
+#Print out the percentages of 'Yes' and 'No'
+table(data.ci$Coverage)/1000
 ```
+Thus we can see that the confidence intervals have approximate the correct coverage.
 
-#### 7.
-Find the empirical mean $\bar Y$ and variance $S^2$ (use `mean()` and `var()`).  How do they compare to $\mu$ and $\sigma^2$?
+$\hfill\square$
 
-```{r}
-mean(many.Y)
-var(many.Y)
-```
-Clearly, the observed mean and the observed variance are "close" to $\mu$ and $\sigma^2$. 
+
