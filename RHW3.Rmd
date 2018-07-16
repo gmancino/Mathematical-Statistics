@@ -1,0 +1,191 @@
+---
+title: "R Homework 3"
+author: "Gabe Mancino"
+date: "10/31/2017"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Due Wednesday, 11/8 by 11:59pm.  Prepare your submission with R Markdown.  Submit fully-knitted Word doc or pdf to D2L by due date.  You are encouraged to use this .Rmd file as your starting point for your submission.**
+
+1.  In Math-Stat, all of the pmfs/pdfs we have discussed are truly *models*.  This means they are proposed mathematical frameworks for explaining behavior of actual data.  We consier one proposed model for some actual data in this problem.  Suppose the type of breast cancer cells (malignant or benign) follow a Bernoulli distribution.  Specifically, with $X = 1$ if the cell is malignant and $X = 0$ if the cell is benign:
+
+$$P(X = x)= 0.4^x 0.6^{1-x}.$$
+
+
+
+Suppose that the radius of the cell in microns, $Y$, depends on $X$ and can be well-modeled with the following conditional pdf:
+
+$$ f(y|x) = \frac{1}{\sqrt{2\pi (3.2+7.1x)}}e^{-\frac{1}{2}\frac{(y- (12 +5x))^2}{3.2+7.1x}}; -\infty < y < \infty$$
+
+
+A.  Find $\mu_Y = E(Y)$.
+
+$\textbf{Solution.}$ Here we notice $Y\mid X\sim N(12+5X,3.2+7.1X).$ Since we are looking for $E(Y)$ we can use the following theorem: $$E_{Y}(Y)=E_{X}[E_{Y\mid X}(Y\mid X)].$$ Thus $E_{Y\mid X}(Y\mid X)=12+5x$ (by using facts from the normal distribution) and $E_{X}(12+5X)=12+5E(X)=12+5(0.4)=`r 12+5*0.4`.$
+
+B.  Find $\sigma^2_Y = Var(Y)$.
+
+$\textbf{Solution.}$ Again, since $Y\mid X\sim N(12+5X,3.2+7.1X)$ we can use the following theorem: $$V_{Y}(Y)=E_{X}(V_{Y\mid X}(Y\mid X))+V_{X}(E_{Y\mid X}(Y\mid X)).$$
+
+Using facts about the normal distribtuion, $V_{Y\mid X}(Y\mid X)=3.2+7.1X$, so $E_{X}(3.2+7.1X)=\sum\limits_{x=0}^{1}(3.2+7.1x)\cdot p(x)=3.2\cdot(0.6)+(3.2+7.1)\cdot (0.4)=`r 3.2*(0.6)+(3.2+7.1)*0.4`.$
+
+Now computing $V_{X}(E_{Y\mid X}(Y\mid X))=V_{X}(12+5x)=E_{X}((12+5X)^2)-(E(12+5X))^2=144+120E(X)+25E(X^2)-`r 14^2`=`r 144+120*0.4+25*0.4-196`.$
+
+Thus $V_{Y}(Y)=E_{X}(V_{Y\mid X}(Y\mid X))+V_{X}(E_{Y\mid X}(Y\mid X))=`r ((3.2)*(0.6)+(3.2+7.1)*0.4)+(144+120*0.4+25*0.4-14^2)`.$
+
+C.  The data set BreastCancerSample.csv contains data on 569 cells.  Plot bar graphs of $X$, and histograms of $Y$ for each $X$.  Does the proposed model appear reasonable?
+
+$\textbf{Solution.}$
+```{r}
+bc.data <- read.csv(file = "BreastCancerSample.csv", header = TRUE)
+library(ggplot2)
+x <- c(0,1)
+f.x <- function(x){
+  if (x == 0){
+    x.b <- sum(bc.data[,1] == "B")/569
+    return(x.b)
+  } else {
+    x.m <- sum(bc.data[,1] == "M")/569
+    return(x.m)
+  }
+}
+dat <- sapply(x, f.x)
+dat.f <- data.frame(x, dat)
+
+#Below is for bar graph of X
+ggplot(aes(x = x, y = dat), dat = dat.f) + geom_bar(stat = 'identity') + ylab('p(X)') + xlab('X') + ggtitle('Observed Graph of X')
+
+
+#Below is graph for each Y
+ggplot(data = bc.data) + geom_histogram(aes(x = Radius), bins = 35, color = 'black') + facet_wrap(~Diagnosis) + ylab('Count') +ggtitle('Observed Graph of Y')
+```
+
+Thus, the proposed model appears to be reasonable as our observed distribution of $X$ is similar to the theoretical Bernoulli distribution and our observed distributions of $Y\mid X$ are both normal in nature.
+
+
+D.  Find $\hat\mu_Y = \hat E(Y)$ and $\hat\sigma^2_Y = \widehat{Var}(Y)$, the empirical (i.e., observed) mean and variance of the cell radii.  Verify that they well-approximate the theoretical quantitities.
+
+$\textbf{Solution.}$ The observed mean of the data is `r mean(bc.data[,2])` and the variance is `r var(bc.data[,2])`; thus both of these quanitities well approximate their respective theoretical values.
+
+
+E.  Now use the data to fill out the following table:
+
+```{r}
+y.m <- subset(bc.data, Diagnosis == "M")
+y.b <- subset(bc.data, Diagnosis == "B")
+d.y.m <- data.frame(y.m)
+d.y.b <- data.frame(y.b)
+```
+
+x   |  $\hat p(x)$  |  $\hat E(Y\mid X)$ |  $\widehat{Var}(Y\mid X)$
+--- | ------------- | -------------      | ---------------------
+0   |      `r sum(bc.data[,1] == "B")/569`         |         `r mean(d.y.b[,2])`           |     `r var(d.y.b[,2])`
+1   |     `r sum(bc.data[,1] == "M")/569`          |          `r mean(d.y.m[,2])`          |     `r var(d.y.m[,2])`
+
+
+Use the quantities in this table to find $\hat \mu_Y$ and $\hat\sigma^2_Y$.  Verify that they match your answers to part D.  
+
+$\textbf{Solution.}$
+
+```{r}
+x0 <- sum(bc.data[,1] == "B")/569
+x1 <- sum(bc.data[,1] == "M")/569
+ehat.ygx.m <- mean(d.y.m[,2])
+ehat.ygx.b <- mean(d.y.b[,2])
+vhat.ygx.m <- var(d.y.m[,2])
+vhat.ygx.b <- var(d.y.b[,2])
+e.x.var <- vhat.ygx.b * x0 + vhat.ygx.m * x1
+ehat.y <- mean(d.y.m[,2]) * x1 + mean(d.y.b[,2]) * x0
+var.x.egx <- ehat.ygx.b^2 * x0 + ehat.ygx.m^2 * x1 - (ehat.y)^2
+var.y <- e.x.var + var.x.egx
+```
+
+Using the above table, $\hat{E}(Y)=`r ehat.y`$ and $\widehat{Var}(Y)= `r var.y`.$ Hence our values from d. match.
+
+(Note: The reason $\widehat{Var}(Y)$ is not exactly the same as part d. is because of how $R$ calculates the variance of a dataset.)
+
+2.  As discussed in class, if $(X,Y)$ follow a bivariate normal distribution then:
+
+$$ E(Y|X) = \mu_Y + \rho \frac{\sigma_Y}{\sigma_X} (X-\mu_X)$$
+
+$$Var(Y|X) = \sigma^2_Y( 1-\rho^2)$$
+
+This implies that under bivariate normality, the conditional mean of $Y$ given $X$ is linear, and the form of the  intercept and slope defining the linear relationship are explicitly determined by the means, variances, and correlation that parameterize the bivariate normal.  In this problem we study this further.
+
+Consider the following combinations of parameterizations, for $\mu_Y = \mu_X = 10$ and $\sigma_X = 2$:
+
+
+$\rho$   |   $\sigma_Y/\sigma_X$
+-------- | ---------------------
+  0.1    |     0.5
+  0.5    |     0.5
+  0.8    |     0.5
+  0.1    |     1
+  0.5    |     1
+  0.8    |     1
+  0.1    |     2
+  0.5    |     2
+  0.8    |     2
+  
+
+Using the function `mvrnorm()` from the `MASS` package, simulate 100 $(X,Y)$ pairs for each row of the table above. 
+
+A.  Plot the 9 data sets, including the best-fit linear regression line (use `geom_smooth(method='lm')` if using `ggplot`).
+
+$\textbf{Solution.}$
+
+```{r}
+library(MASS)
+set.seed(8594)
+plot.bvnorm <- function(mux = 10, muy = 10, sigx = 2, sigy, rho) {
+  Sig1 <- matrix(c(sigx^2,rho*sigx*sigy,rho*sigx*sigy,sigy^2),2,2)
+  random.data <- mvrnorm(100,mu=c(10,10),Sigma = Sig1)
+  mydata <- data.frame(random.data)
+  fit <- lm(X2 ~ X1, data = mydata)
+  mc <- round(fit$coefficients, 2)
+  mytitle <- paste('Intercept = ', mc[1], 'Slope = ', mc[2])
+  ggplot(data=mydata) + geom_point(aes(x = X1, y = X2)) + geom_smooth(aes(x = X1, y = X2), method = 'lm') + xlab('X') + ylab('Y') + ggtitle(paste('Rho = ', rho, '\n SigY = ', sigy, '\n', mytitle))
+}
+#Data Set 1
+plot.bvnorm(sigy = 1, rho = 0.1)
+#Data Set 2
+plot.bvnorm(sigy = 1, rho = 0.5)
+#Data Set 3
+plot.bvnorm(sigy = 1, rho = 0.8)
+#Data Set 4
+plot.bvnorm(sigy = 2, rho = 0.1)
+#Data Set 5
+plot.bvnorm(sigy = 2, rho = 0.5)
+#Data Set 6
+plot.bvnorm(sigy = 2, rho = 0.8)
+#Data Set 7
+plot.bvnorm(sigy = 4, rho = 0.1)
+#Data Set 8
+plot.bvnorm(sigy = 4, rho = 0.5)
+#Data Set 9
+plot.bvnorm(sigy = 4, rho = 0.8)
+```
+
+B.  By describing the scatterplots, briefly explain how the combinations of $\rho$ and $\sigma_Y/\sigma_X$ affect $\widehat{Var}(Y|X)$. 
+
+$\textbf{Solution.}$ The changing of $\rho$ vastly affected our scatterplots since each increasing $\rho$ causes $\widehat{Var}(Y\mid X)$ to become scaled down, regarless of what $\sigma_Y /\sigma_X$ is.
+
+C.  Fill out the table below, indicating the theoretical quantities of the regression coefficients, as well as the estimated coefficients from using `lm()` on each of the 9 simulated data sets.
+
+$\rho$   |   $\sigma_Y/\sigma_X$  | $\beta_0$  | $\beta_1$| $\hat\beta_0$  | $\hat\beta_1$
+-------- | --------------------- | ----------- | -------  | ------------   | -------------
+  0.1    |     0.5     |`r 10-0.1*0.5*10`  | `r 0.1*0.5` |8.5  |0.13  |  
+  0.5    |     0.5  | `r 10-0.5*0.5*10` | `r 0.5*0.5` | 6.76 |0.32  |  
+  0.8    |     0.5  | `r 10-0.8*0.5*10` | `r 0.8*0.5` |6.02  |0.4  |  
+  0.1    |     1  | `r 10-0.1*1*10` | `r 0.1*1` | 10.44 |-0.03  |  
+  0.5    |     1  | `r 10-0.5*1*10` | `r 0.5*1` | 5.05 |0.5  |  
+  0.8    |     1  | `r 10-0.8*1*10` | `r 0.8*1` | 2.62 |0.74  |  
+  0.1    |     2  | `r 10-0.1*2*10` | `r 0.1*2` | 9.22 |0.09  |  
+  0.5    |     2  | `r 10-0.5*2*10` | `r 0.5*2` | 0.13 |1.09  |  
+  0.8    |     2  | `r 10-0.8*2*10` | `r 0.8*2` | -6.99 | 1.67 |  
+

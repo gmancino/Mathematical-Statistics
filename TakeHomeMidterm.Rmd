@@ -1,0 +1,293 @@
+---
+title: "Math Stat Midterm Take Home"
+author: "Gabe Mancino"
+date: "10/16/2017"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Midterm Take Home Portion
+
+# Question 1
+Since $F(\cdot)$ satisfies the definition of a continuous CDF, $U\sim UNIF(0,1)$ and $Y\equiv F^{-1}(U)$, then
+\[
+\begin{align*}
+P(Y\le t) &=P(F^{-1}(U)\le t)\\
+          &=P(U\le F(t))\\
+          &=\int_{0}^{F(t)}1\cdot dy\\
+          &=F(t)-0\\
+          &=F(t).\\
+\end{align*}
+\]
+
+Thus $Y\sim F(\cdot)$ by definition.
+
+# Question 2
+Define the following PDF of $Y$ as follows:
+$$f(y)=\frac{1}{\pi\sqrt{(y-a)(b-y)}}$$
+for $y\in[a,b]$ with $a<b$.
+
+## a.
+
+Consider $y\in [2,6]$, then our equation becomes: $$f(y)=\frac{1}{\pi\sqrt{(y-2)(6-y)}}.$$
+```{r graphing pdf}
+library(ggplot2)
+yvals <- seq(2, 6, l = 100)
+fy <- function(y) {
+  pdfy <- 1/(pi*sqrt((y-2)*(6-y)))
+  return(pdfy)
+}
+yvals <- seq(2, 6, l = 100)
+pfy <- fy(yvals)
+mydata <- data.frame(yvals, pfy)
+ggplot(aes(x = yvals,y = pfy), data = mydata) + geom_line(color = "black") + xlab('y') + ylab('f(y)') + ggtitle('f(y) on [2,6]')
+```
+
+## b.
+
+The CDF of $Y$ is defined to be $F(Y)\equiv P(Y\le y)=\int\limits_{-\infty}^{y}f(r)dr$, hence we are looking for the following integral:
+
+$$\int_{a}^{y}\frac{1}{\pi\sqrt{(r-a)(b-r)}}dr.$$
+
+
+Letting $u=\frac{r-a}{b-a}$ we now have:
+$$\int_{0}^{\frac{y-a}{b-a}}\frac{(b-a)du}{\pi\sqrt{(b-a)^2u(1-u)}}=\int_{0}^{\frac{y-a}{b-a}}\frac{du}{\pi\sqrt{u(1-u)}}.$$
+
+
+Making a second change of variable: $t=\sqrt(u)\Rightarrow t^2=u$, thus $du=2tdt$. Our integral now becomes:
+
+$$\int_{0}^{\sqrt{\frac{y-a}{b-a}}}\frac{2tdt}{\pi\sqrt{t^2(1-t^2)}}=\int_{0}^{\sqrt{\frac{y-a}{b-a}}}\frac{2dt}{\pi \sqrt{1-t^2}}=\frac{2}{\pi}\int_{0}^{\sqrt{\frac{y-a}{b-a}}}\frac{dt}{\sqrt{1-t^2}}$$   
+
+Noticing that the last integral has a well known antiderivative, we can conclude:
+\[
+F(y)=\frac{2}{\pi}\arcsin(t)\Big|_0^{\sqrt{\frac{y-a}{b-a}}}=\frac{2}{\pi}\arcsin({\sqrt{\frac{y-a}{b-a}}}).
+\]
+
+Hence, we can conclude the following:
+\[F(y)=
+\begin{cases}
+0 & y\le a\\
+\frac{2}{\pi}\arcsin({\sqrt{\frac{y-a}{b-a}}}) & y\in(a,b).\\
+1 & y\ge b\\
+\end{cases}
+\]
+
+## c.
+
+```{r graphing cdf}
+Fy <- function(y, a, b) {
+  if (y <= a){
+    return(0)}
+  if (y >= b){
+    return(1)}
+  if (y < b & y > a) {
+    cdff <- (2/pi)*asin(sqrt((y-a)/(b-a)))
+    return(cdff)}
+}
+yvals <- seq(2, 6, l = 100)
+plot.cdff <- sapply(yvals, Fy, a = 2, b = 6)
+my.data <- data.frame(yvals, plot.cdff)
+ggplot(aes(x = yvals,y = plot.cdff), data = my.data) + geom_line(color = "black") + xlab('y') + ylab('F(y)') + ggtitle('F(y) on [2,6]')
+```
+
+## d.
+
+Using b. and letting $a=2$ and $b=5$, we can proceed as follows:
+$$P(3\le Y\le 5)=\int_3^5f(y)dy=F(5)-F(3)=\frac{2}{\pi}\arcsin({\sqrt{\frac{5-2}{6-2}}})-\frac{2}{\pi}\arcsin({\sqrt{\frac{3-2}{6-2}}}).$$
+Thus we have $F(5) - F(3)$ = `r Fy(5, 2, 6) - Fy(3, 2, 6)`.
+
+
+## e.
+
+Using c. the median of $Y$ appears to be 4.
+
+
+## f.
+
+```{r root finding}
+Fy.root <- function(y) {
+  tosolve <- (2/pi)*asin(sqrt((y-2)/(6-2))) - 0.5
+  return(tosolve)
+}
+uniroot(Fy.root, interval = c(2, 6))
+```
+Hence our guess in e. was accurate.
+
+
+## g.
+
+Consider the following simulations using $U\sim UNI(0,1)$ and $Y=F^{-1}(U)$:
+```{r simulations}
+u <- runif(1000, min = 0, max = 1)
+y.inv <- function(y) {
+  inv <- 4*(sin((pi/2)*y)^2) + 2
+  return(inv)
+}
+many.y.inv <- sapply(u, y.inv)
+df <- data.frame(u, many.y.inv)
+ggplot(aes(x = many.y.inv), data = df) + geom_histogram(color = "black", bins = 30) + xlab('Y') + ylab('Count') + ggtitle('Simulations of Y')
+```
+
+## h.
+
+```{r observed proportion}
+p.y5 <- sum(many.y.inv <= 5)/1000
+p.y3 <- sum(many.y.inv <= 3)/1000
+p.5.3 <- p.y5 - p.y3
+p.5.3
+```
+Thus $\hat{P}(3\le Y\le 5)$ is within `r abs(p.5.3 - 0.3333)` of our theoretical probability.
+
+## i.
+
+The median of our simulation is `r median(many.y.inv)` which is within `r abs(median(many.y.inv) - 4)` of 4.
+
+## j.
+
+Letting $a=0$ and $b=1$ we can run 1000 simulations of $Y$ as follows:
+
+```{r rbeta}
+samp <- rbeta(1000, 0.5, 0.5)
+df.b <- data.frame(c(1:1000), samp)
+ggplot(aes(x = samp), data = df.b) + geom_histogram(color = "black", bins = 35) + xlab('Y') + ylab('Count') + ggtitle(' Simulations of Y when a = 0 and b = 1')
+```
+
+
+# Question 3
+
+## a.
+
+The following is a proof of Markov's Inequality.
+
+$\textbf{Proof.}$
+Let $Y$ be a continuous random variable with finite mean and variance and $g(\cdot)$ is nonnegative. Consider the following set $A\equiv\{y:g(y)\ge k\}$, then $P(g(y)\ge k)=\int_{A}f(y)dy$ by definition. Multipying both sides by $k$ yields $k\cdot P(g(y)\ge k)=k\cdot \int_{A}f(y)dy$, working with the right equation we can push $k$ into the integral since it is a constant to have: $\int_{A}kf(y)dy$. By our construction of $A$,  $\int_{A}kf(y)dy\le \int_{A}g(y)f(y)dy\le \int_{\mathbb{R}}g(y)f(y)dy=E[g(Y)]$ because $g(y)$ is nonnegative. Hence moving $k$ around yields $$P(g(y)\ge k)=\frac{E[g(Y)]}{k}$$ and the proof is complete. QED.
+
+## b.
+
+Markov's Inequality can be used to prove Tchebysheff's Inequality as follows:
+
+$\textbf{Proof.}$
+Define $g(Y)\equiv \mid Y-\mu\mid=\sqrt{(Y-\mu)^2}$. Then $P(g(Y)\ge k)=P(\sqrt{(Y-\mu)^2}\ge k)=P((Y-\mu)^2\ge k^2)$. Using Markov's Inequality, $P((Y-\mu)^2\ge k^2)\le \frac{E((Y-\mu)^2)}{^2}=\frac{\sigma ^2}{k^2}$. Letting $a=\frac{k}{\sigma}$ yields $$P(\sqrt{(Y-\mu)^2}\ge k)=P(\mid Y-\mu \mid \ge k)=P(\mid Y-\mu \mid\ge a\sigma)\le\frac{E((Y-\mu)^2)}{k^2}=\frac{\sigma ^2}{k^2}=\frac{1}{a^2}$$
+and hence Tchebysheff's Inequality has been shown. QED.
+
+
+## c.
+
+Noticing that Tchebysheff's Inequality can be rewritten as follows:
+$$P(\mid Y-\mu\mid\ge k\sigma)\le \frac{1}{k^2}\Rightarrow 1-P(\mid Y-\sigma\mid<k\sigma)\le \frac{1}{k^2}.$$
+
+Thus for each of the following distributions we will compute $P(\mid Y-\sigma\mid<k\sigma)$ and subtract this value from 1 to compare to the bound in Tchebysheff's Inequality.
+
+### i.
+
+Let $Y\sim BINOM(50,0.5$), thus the pmf of $Y$ is:
+\[P(Y=y)=
+\begin{cases}
+\binom{50}{y}0.5^y(1-0.5)^{50-y} &y=0,1,2,3,\dots,50\\
+0 & otherwise
+\end{cases}
+.\]
+Using what we know about the binomial distribution, $\mu = 50(0.5) =`r 50*0.5`$ and $\sigma=\sqrt{50(0.5)(0.5)}=`r sqrt(50*0.5*0.5)`.$
+
+Hence we can compute $P(\mid Y-\sigma\mid<k\sigma)$ as follows:
+\[\begin{align*}
+P(\mid Y-\sigma\mid<k\sigma) &= P(-2\sqrt{(0.5)^{2} 50}+50(0.5)<Y<2\sqrt{(0.5)^{2}50}+50(0.5))\\
+&=P(`r -2*sqrt(0.5^2*50)+50*0.5`<Y<`r 2*sqrt(0.5^2*50)+50*0.5`\\
+&=\sum_{y=18}^{32}\binom{50}{y}0.5^y(1-0.5)^{50-y}\\
+&=`r sum(dbinom(18:32, 50, 0.5))`.
+\end{align*}\]
+
+Thus 1-`r sum(dbinom(18:32, 50, 0.5))` = `r 1- sum(dbinom(18:32, 50, 0.5))` $\le 0.25.$
+
+### ii.
+
+Let $Y\sim GEOM(0.5)$, thus the pmf of $Y$ is:
+\[P(Y=y)=
+\begin{cases}
+0.5(0.5)^{y-1} &y=1,2,3,\dots\\
+0 &otherwise
+\end{cases}
+.\]
+From the geometric distributions we know $\mu=\frac{1}{0.5}=`r 1/0.5`$ and $\sigma=\sqrt{\frac{1-0.5}{0.5^2}}=`r sqrt((1-.05)/(0.5^2))`.$
+
+Thus,
+\[\begin{align*}
+P(\mid Y-\sigma\mid<k\sigma) &= P(-2\sqrt{\frac{1-0.5}{0.5^2}}+\frac{1}{0.5}<Y<2\sqrt{\frac{1-0.5}{0.5^2}}+\frac{1}{0.5})\\
+&= P(`r -2*sqrt((1-0.5)/(0.5^2))+1/0.5`<Y<`r 2*sqrt((1-0.5)/(0.5^2))+1/0.5`)\\
+&=P(1<Y<4)\\
+&=\sum_{y=1}^{4}0.5(0.5)^{y-1}\\
+&=`r sum(dgeom(0:3, 0.5))`.
+\end{align*}\]
+
+Hence 1-`r sum(dgeom(0:3, 0.5))`=`r 1 - sum(dgeom(0:3, 0.5))`$\le0.25$.
+
+### iii.
+
+Let $Y\sim N(2,4)$, then the pdf for $Y$ is:
+$$f(y)= \frac{1}{\sqrt{2\pi 4}}e^{-\frac{1}{2}(\frac{y-2}{2})^{2}}$$ for $y\in(-\infty,\infty)$.
+
+From the normal distribution we know $\mu=2$ and $\sigma= 2.$
+
+Thus,
+\[\begin{align*}
+P(\mid Y-\sigma\mid<k\sigma) &= P(-2(2)+2<Y<2(2)+2)\\
+&= P(`r -2*2+2`<Y<`r 2*2+2`)\\
+&=\int_{-2}^{6}\frac{1}{\sqrt{2\pi 4}}e^{-\frac{1}{2}(\frac{y-2}{2})^{2}}dy\\
+&=0.9545.
+\end{align*}\]
+
+Hence 1-0.9545=`r 1-0.9545` $\le 0.25$.
+
+### iv.
+
+Let $Y\sim GAM(2,4)$, then the pdf for $Y$ is:
+\[f(y)=
+\begin{cases}
+\frac{1}{16}ye^{-\frac{y}{4}} &y\in(0,\infty)\\
+0 & otherwise
+\end{cases}
+.\]
+
+From the gamma distribution we know $\mu=2(4)=8$ and $\sigma=\sqrt{2(4)^2}=\sqrt{32}$.
+
+Thus,
+\[\begin{align*}
+P(\mid Y-\sigma\mid<k\sigma) &= P(-2\sqrt{32}+8<Y<2\sqrt{32}+8))\\
+&= P(`r -2*sqrt(32)+8`<Y<`r 2*sqrt(32)+8`)\\
+&=\int_{0}^{2\sqrt{32}+8}\frac{1}{16}ye^{-\frac{y}{4}}dy\\
+&=0.9534.
+\end{align*}\]
+
+Hence 1-0.9534=`r 1-0.9534`$\le 0.25$.
+
+### v.
+
+Let $Y\sim BETA(2,2)$ then the pdf for $Y$ is:
+\[f(y)=
+\begin{cases}
+6y(1-y) &y\in[0,1]\\
+0 &otherwise
+\end{cases}
+.\]
+
+Using what we know about the beta distribution, $\mu=\frac{2}{2+2}=`r 2/(2+2)`$ and $\sigma=\sqrt{\frac{2(2)}{(2+2)^2(2+2+1)}}=`r sqrt((2*2)/((2+2)^2*(2+2+1)))`.$
+
+Thus,
+\[\begin{align*}
+P(\mid Y-\sigma\mid<k\sigma) &= P(-2\sqrt{\frac{2(2)}{(2+2)^2(2+2+1)}} + 0.5<Y<2\sqrt{\frac{2(2)}{(2+2)^2(2+2+1)}}+0.5)\\
+&= P(`r -2*sqrt((2*2)/((2+2)^2*(2+2+1)))+0.5`<Y< `r 2*sqrt((2*2)/((2+2)^2*(2+2+1)))+0.5`)\\
+&=\int_{`r -2*sqrt((2*2)/((2+2)^2*(2+2+1)))+0.5`}^{`r 2*sqrt((2*2)/((2+2)^2*(2+2+1)))+0.5`}6y(1-y)dy\\
+&=0.9839.
+\end{align*}\]
+
+Hence 1-0.9839=`r 1-0.9839`$\le 0.25$.
+
+## d.
+
+In general, the actual probabilities computed do not come that close to our bound of 0.25. The closest of such was obtained in ii.
